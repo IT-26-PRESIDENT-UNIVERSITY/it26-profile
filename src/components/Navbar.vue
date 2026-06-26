@@ -12,10 +12,10 @@ const toggleMenu = () => {
 <template>
   <nav class="bg-white shadow-sm sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
+      <div class="flex justify-between h-24">
         <div class="flex items-center">
           <RouterLink to="/" class="flex-shrink-0 flex items-center">
-            <img src="/logo.jpeg" alt="IT Logo" class="h-12 w-auto" />
+            <img src="/logo.jpeg" alt="IT Logo" class="h-20 w-auto" />
           </RouterLink>
         </div>
         
