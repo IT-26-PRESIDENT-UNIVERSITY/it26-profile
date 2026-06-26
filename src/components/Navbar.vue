@@ -15,7 +15,7 @@ const toggleMenu = () => {
       <div class="flex justify-between h-16">
         <div class="flex items-center">
           <RouterLink to="/" class="flex-shrink-0 flex items-center">
-            <img src="/logo.png" alt="IT Logo" class="h-12 w-auto" />
+            <img src="/logo.jpeg" alt="IT Logo" class="h-12 w-auto" />
           </RouterLink>
         </div>
         
