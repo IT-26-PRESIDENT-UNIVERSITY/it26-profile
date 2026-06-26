@@ -8,7 +8,7 @@
     <div class="text-center">
       <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">Our Projects</h1>
       <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-        (Zhel's Workspace - Project list & integration goes here)
+        
       </p>
     </div>
   </div>

@@ -8,7 +8,7 @@
     <div class="text-center">
       <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">Student Directory</h1>
       <p class="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
-        (Kenken's Workspace - Component & Search logic goes here)
+        
       </p>
     </div>
   </div>
