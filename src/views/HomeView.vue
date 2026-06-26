@@ -7,14 +7,14 @@ import { RouterLink } from 'vue-router'
     <!-- Hero Section -->
     <div class="relative bg-pres-dark text-white overflow-hidden">
       <div class="absolute inset-0">
-        <img class="w-full h-full object-cover" src="/gedung-baru.png" alt="President University Building" />
+        <img class="w-full h-full object-cover blur-sm scale-105" src="/gedung-baru.png" alt="President University Building" />
         <div class="absolute inset-0 bg-pres-dark/50" />
       </div>
       <div class="relative max-w-7xl mx-auto py-24 px-4 sm:py-32 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-        <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white">
+        <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-white drop-shadow-lg">
           Information Technology
         </h1>
-        <p class="mt-6 text-xl max-w-3xl text-gray-300">
+        <p class="mt-6 text-xl max-w-3xl text-gray-200 drop-shadow-md">
           Batch 2026 • President University
         </p>
         <p class="mt-4 text-lg max-w-2xl text-gray-400">
