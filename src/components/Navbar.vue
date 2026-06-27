@@ -1,16 +1,22 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { RouterLink } from "vue-router";
+import { useRouter, RouterLink } from "vue-router";
 
+const router = useRouter();
 const isMenuOpen = ref(false);
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
+
+const handleLogin = () => {
+  isMenuOpen.value = false;
+  router.push('/login');
+};
 </script>
 
 <template>
-  <nav class="bg-white shadow-sm sticky top-0 z-50 border-b-8 border-pres-blue">
+  <nav class="bg-white sticky top-0 z-50 border-b-8 border-pres-red">
     <div class="max-w-full mx-auto px-4 lg:px-4">
       <div class="flex justify-between items-center h-18">
         <div class="flex flex-1 items-center">
@@ -63,11 +69,12 @@ const toggleMenu = () => {
 
           <div class="hidden sm:block h-6 w-px bg-gray-300"></div>
 
-          <button class="hidden sm:block text-gray-500 hover:text-pres-blue transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-            </svg>
-          </button>
+        <button 
+          @click="handleLogin" 
+          class="hidden sm:block text-gray-500 hover:text-pres-red font-medium transition-colors border border-gray-300 px-5 py-2 rounded-full hover:border-pres-red"
+        >
+          Login
+        </button>
         </div>
 
 
@@ -168,10 +175,11 @@ const toggleMenu = () => {
             </svg>
           </button>
 
-          <button class="text-gray-500 hover:text-pres-blue transition-colors p-1">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
-            </svg>
+          <button 
+            @click="handleLogin" 
+            class="text-gray-500 hover:text-pres-red font-medium transition-colors border border-gray-300 px-5 py-2 rounded-full hover:border-pres-red"
+          >
+            Login
           </button>
           
         </div>

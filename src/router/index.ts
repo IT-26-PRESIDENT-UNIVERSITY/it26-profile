@@ -23,6 +23,11 @@ const router = createRouter({
       path: '/media',
       name: 'media',
       component: () => import('../views/MediaView.vue')
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue')
     }
   ]
 })
