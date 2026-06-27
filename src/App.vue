@@ -2,6 +2,9 @@
 import { RouterView } from 'vue-router'
 import Navbar from './components/Navbar.vue'
 import Footer from './components/Footer.vue'
+import { supabase } from './lib/supabase.ts'
+
+console.log('Supabase Client:', supabase)
 </script>
 
 <template>
