@@ -3,12 +3,61 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabase';
 import { logout } from '../services/authService'; 
+import { computed } from 'vue';
+import directoryData from '../data/dataMahasiswa.json';
+// import projectsData from '../data/projects.json'; 
+// import mediaData from '../data/media.json';
 
 const router = useRouter();
 const isMenuOpen = ref(false); 
 const isLoggedIn = ref(false); 
 const isDropdownOpen = ref(false);
-const dropdownRef = ref(null); // Ref untuk mendeteksi klik luar
+const dropdownRef = ref(null);
+const isSearchOpen = ref(false);
+const searchQuery = ref('');
+
+
+// dummy sementara nunggu
+const projectsData = [
+  { id: 1, title: 'Web Absensi', desc: 'Sistem absensi online' },
+  { id: 2, title: 'Aplikasi Kasir', desc: 'POS system' }
+];
+const mediaData = [
+  { id: 1, title: 'Tutorial Vue 3', type: 'Video' },
+  { id: 2, title: 'Belajar Tailwind', type: 'Artikel' }
+];
+
+const dashboardLink = computed(() => {
+  const role = localStorage.getItem('user_role');
+  return role === 'admin' ? '/admin' : '/user';
+});
+
+const searchResults = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+
+  if (!query) {
+    return { directory: [], projects: [], media: [] };
+  }
+
+  const filteredDirectory = directoryData.filter((item: any) => 
+    item.name?.toLowerCase().includes(query) || 
+    (item.skills && item.skills.some((s: string) => s.toLowerCase().includes(query)))
+  ).slice(0, 3);
+
+  const filteredProjects = projectsData.filter((item: any) => 
+    item.name?.toLowerCase().includes(query)
+  ).slice(0, 3);
+
+  const filteredMedia = mediaData.filter((item: any) => 
+    item.name?.toLowerCase().includes(query)
+  ).slice(0, 3);
+
+  return {
+    directory: filteredDirectory,
+    projects: filteredProjects,
+    media: filteredMedia
+  }
+})
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
@@ -80,7 +129,10 @@ onUnmounted(() => {
             <img src="/logo.png" alt="IT Logo" class="h-10 w-auto -mt-2" />
           </RouterLink>
 
-          <button class="hidden sm:flex items-center text-gray-500 hover:text-pres-blue px-2 py-1.5 text-sm transition-colors font-medium mt-1 ml-4">
+          <button 
+            @click = 'isSearchOpen = true'
+            class="hidden sm:flex items-center text-gray-500 hover:text-pres-blue px-2 py-1.5 text-sm transition-colors font-medium mt-1 ml-4"
+          >
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
@@ -151,9 +203,13 @@ onUnmounted(() => {
 
               class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200"
             >
-              <router-link to="/user" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+              <RouterLink 
+                :to="dashboardLink" 
+                @click="closeDropdown" 
+                class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+              >
                 My Dashboard
-              </router-link>
+              </RouterLink>
               <button 
                 @click="handleLogout" 
                 class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium"
@@ -272,4 +328,110 @@ onUnmounted(() => {
       </div>
     </div>
   </nav>
+
+  <div 
+    v-if="isSearchOpen" 
+    class="fixed inset-0 z-[100] flex items-start justify-center pt-24 bg-gray-900/50 backdrop-blur-sm"
+    @click.self="isSearchOpen = false"
+  >
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col mx-4">
+      
+      <div class="flex items-center px-4 py-4 border-b border-gray-100">
+        <svg class="w-6 h-6 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+        </svg>
+        <input 
+          v-model="searchQuery"
+          type="text" 
+          placeholder="Search directory, projects, media..." 
+          class="flex-1 bg-transparent text-gray-800 text-lg focus:outline-none placeholder-gray-400"
+          autofocus
+        />
+        <button @click="isSearchOpen = false" class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded hover:bg-gray-200">
+          ESC
+        </button>
+      </div>
+
+      <div 
+        v-if="isSearchOpen" 
+        class="fixed inset-0 z-[100] flex items-start justify-center pt-24 bg-gray-900/50 backdrop-blur-sm"
+        @click.self="isSearchOpen = false"
+      >
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col mx-4">
+          
+          <div class="flex items-center px-4 py-4 border-b border-gray-100">
+            <svg class="w-6 h-6 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <input 
+              v-model="searchQuery"
+              type="text" 
+              placeholder="Search directory, projects, media..." 
+              class="flex-1 bg-transparent text-gray-800 text-lg focus:outline-none placeholder-gray-400"
+              autofocus
+            />
+            <button @click="isSearchOpen = false" class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition">
+              ESC
+            </button>
+          </div>
+
+          <div class="p-4 max-h-[60vh] overflow-y-auto">
+            
+            <div v-if="!searchQuery" class="text-sm text-gray-400 text-center py-8">
+              Ketik sesuatu untuk mulai mencari di Directory, Projects, atau Media.
+            </div>
+
+            <div v-else-if="searchResults.directory.length === 0 && searchResults.projects.length === 0 && searchResults.media.length === 0" class="text-sm text-gray-500 text-center py-8">
+              Tidak menemukan apapun untuk "<span class="font-semibold text-gray-800">{{ searchQuery }}</span>"
+            </div>
+
+            <div v-else class="space-y-6">
+              
+              <div v-if="searchResults.directory.length > 0">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Directory</h3>
+                <ul class="space-y-1">
+                  <li v-for="student in searchResults.directory" :key="student.nim">
+                    <a href="#" class="block px-3 py-2 rounded-lg hover:bg-blue-50 transition flex justify-between items-center group">
+                      <div>
+                        <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ student.name }}</div>
+                        <div class="text-xs text-gray-500">{{ student.nim }}</div>
+                      </div>
+                      <span class="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition">Lihat &rarr;</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="searchResults.projects.length > 0">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Projects</h3>
+                <ul class="space-y-1">
+                  <li v-for="project in searchResults.projects" :key="project.id">
+                    <a href="#" class="block px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
+                      <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ project.title }}</div>
+                      <div class="text-xs text-gray-500">{{ project.desc }}</div>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              <div v-if="searchResults.media.length > 0">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Media</h3>
+                <ul class="space-y-1">
+                  <li v-for="media in searchResults.media" :key="media.id">
+                    <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
+                      <svg class="w-4 h-4 text-gray-400 mr-2 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                      <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ media.title }}</div>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
 </template>
