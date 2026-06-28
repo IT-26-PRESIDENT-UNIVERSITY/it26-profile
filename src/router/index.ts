@@ -46,33 +46,31 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to, _from, next) => {
+  // Ambil session dari Supabase
   const { data: { session } } = await supabase.auth.getSession();
   
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  // Cek meta tag di router (pastikan rute lo punya meta: { requiresAdmin: true/false })
   const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
-  if (to.path === '/login') {
-    if (session) {
-      next('/user'); 
-    } else {
-      next(); 
+  // 1. Logika Halaman Admin
+  if (requiresAdmin) {
+    if (!session) {
+      return next('/login');
     }
-    return;
-  }
-
-  if ((requiresAuth || requiresAdmin) && !session) {
-    next('/login'); 
-    return;
-  }
-
-  if (requiresAdmin && session) {
     const role = await getUserRole(session.user.id);
-    if (role === 'admin') {
-      next(); 
-    } else {
-      next('/user'); 
-    }
-    return;
+    return role === 'admin' ? next() : next('/user');
+  }
+
+  // 2. Logika Mencegah User yang sudah login akses halaman Login/Register
+  if ((to.path === '/login' || to.path === '/register') && session) {
+    const role = await getUserRole(session.user.id);
+    return next(role === 'admin' ? '/admin' : '/user');
+  }
+
+  // 3. Logika Proteksi Halaman User (Dashboard)
+  if (requiresAuth && !session) {
+    return next('/login');
   }
 
   next();

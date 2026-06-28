@@ -1,24 +1,80 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter, RouterLink } from "vue-router";
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { supabase } from '../lib/supabase';
+import { logout } from '../services/authService'; 
 
 const router = useRouter();
-const isMenuOpen = ref(false);
+const isMenuOpen = ref(false); 
+const isLoggedIn = ref(false); 
+const isDropdownOpen = ref(false);
+const dropdownRef = ref(null); // Ref untuk mendeteksi klik luar
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value;
 };
 
-const handleLogin = () => {
-  isMenuOpen.value = false;
-  router.push('/login');
+// Fungsi Logout
+const handleLogout = async () => {
+  isDropdownOpen.value = false;
+  
+  // 1. Logout dari backend
+  await logout(); 
+  
+  // 2. Set state ke false
+  isLoggedIn.value = false;
+  
+  // 3. Pindah ke halaman Home, lalu reload paksa untuk memastikan 
+  // semua data session di memory benar-benar terhapus
+  await router.push('/');
+  window.location.reload(); 
 };
+
+// Fungsi tutup dropdown
+const closeDropdown = () => {
+  isDropdownOpen.value = false;
+};
+
+// Fungsi deteksi klik di luar dropdown
+const handleClickOutside = (event: MouseEvent) => {
+  // Tambahkan pengecekan: 
+  // Jika klik terjadi di dalam dropdown ATAU di tombol profil, JANGAN tutup dropdown
+  const profileButton = document.querySelector('.profile-btn'); 
+  
+  if (
+    (dropdownRef.value && (dropdownRef.value as any).contains(event.target)) || 
+    (profileButton && profileButton.contains(event.target as Node))
+  ) {
+    return;
+  }
+  
+  closeDropdown();
+};
+
+onMounted(async () => {
+  // 1. Cek session awal
+  const { data } = await supabase.auth.getSession();
+  isLoggedIn.value = !!data.session;
+
+  // 2. Listener Auth
+  supabase.auth.onAuthStateChange((_event, session) => {
+    isLoggedIn.value = !!session;
+  });
+
+  // 3. Listener Klik di Luar
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  // Bersihkan listener saat komponen di-unmount
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>
 
 <template>
   <nav class="bg-white sticky top-0 z-50 border-b-8 border-pres-red">
     <div class="max-w-full mx-auto px-4 lg:px-4">
-      <div class="flex justify-between items-center h-18">
+      <div class="flex items-center justify-between w-full h-18">
         <div class="flex flex-1 items-center">
           <RouterLink to="/" class="flex-shrink-0 flex items-center -mb-2">
             <img src="/logo.png" alt="IT Logo" class="h-10 w-auto -mt-2" />
@@ -60,23 +116,53 @@ const handleLogin = () => {
           >
         </div>
 
-        <div class="flex-1 flex items-center justify-end space-x-6">
-          <button class="hidden sm:block text-gray-500 hover:text-pres-blue transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+        <div class="flex-1 flex justify-end items-center space-x-4">
+  
+          <button class="text-gray-500 hover:text-blue-600 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
             </svg>
           </button>
 
-          <div class="hidden sm:block h-6 w-px bg-gray-300"></div>
+          <div class="h-6 w-px bg-gray-300"></div>
 
-        <button 
-          @click="handleLogin" 
-          class="hidden sm:block text-gray-500 hover:text-pres-red font-medium transition-colors border border-gray-300 px-5 py-2 rounded-full hover:border-pres-red"
-        >
-          Login
-        </button>
+          <button 
+            v-if="!isLoggedIn" 
+            @click="router.push('/login')" 
+            class="text-gray-500 hover:text-blue-600 font-medium border border-gray-300 px-5 py-2 rounded-lg transition"
+          >
+            Login
+          </button>
+
+          <div v-else class="relative">
+            <button 
+              @click="isDropdownOpen = !isDropdownOpen" 
+              class="flex profile-btn items-center focus:outline-none transition-transform hover:scale-105"
+            >
+              <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center border border-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            </button>
+
+            <div 
+              v-if="isDropdownOpen" 
+
+              class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200"
+            >
+              <router-link to="/user" class="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100">
+                My Dashboard
+              </router-link>
+              <button 
+                @click="handleLogout" 
+                class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
-
 
 
         <!-- Mobile menu button -->
@@ -176,10 +262,10 @@ const handleLogin = () => {
           </button>
 
           <button 
-            @click="handleLogin" 
-            class="text-gray-500 hover:text-pres-blue font-medium transition-colors border border-gray-300 px-5 py-2 rounded-full hover:border-pres-blue"
+            @click="isLoggedIn ? handleLogout() : router.push('/login')"
+            class="text-gray-500 hover:text-pres-blue font-medium transition-colors border border-gray-300 px-5 py-2 rounded-lg"
           >
-            Login
+            {{ isLoggedIn ? 'Logout' : 'Login' }}
           </button>
           
         </div>
