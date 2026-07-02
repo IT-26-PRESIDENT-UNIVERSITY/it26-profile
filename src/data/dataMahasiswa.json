@@ -1798,5 +1798,115 @@
                 "repository_url": "https://github.com/..."
             }
         ]
+    },
+    {
+        "nim": "00120240077",
+        "name": "Andreas Marlon Tampubolon",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240078",
+        "name": "Dhimaz Januarino Putra Ananta",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240079",
+        "name": "Muhammad Rafli Putra Persada",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240080",
+        "name": "Muhammad Herdani Alamsyah",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240081",
+        "name": "Raschal",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240082",
+        "name": "Riska Lira Auliya",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240083",
+        "name": "Husaini Firdaus",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240084",
+        "name": "Zaed Sabil",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240085",
+        "name": "Zyrelia Beatrice",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240086",
+        "name": "Izdihar Ibrahim",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
+    },
+    {
+        "nim": "00120240087",
+        "name": "Andini Lidya Sealfi Harefa",
+        "major": "Information Technology",
+        "batch": 2026,
+        "specialization": "",
+        "skills": [],
+        "github_username": "",
+        "projects": []
     }
 ]
