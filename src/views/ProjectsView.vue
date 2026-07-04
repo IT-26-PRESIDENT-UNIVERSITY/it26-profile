@@ -1,7 +1,28 @@
 <script setup lang="ts">
 import { currentLang, translations } from '../store/langStore'
-// Frontend Developer (Project Section): zhel
-// Silakan bangun komponen tampilan daftar project angkatan dan integrasi datanya di sini.
+import { ref, onMounted } from 'vue'
+import { supabase } from '../lib/supabase'
+
+const projects = ref([])
+
+const fetchPublishedProjects = async () => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_projects_by_status', { p_status: 'published' })
+
+    if (error) throw error
+
+    projects.value = data || []
+    console.log("Data project yang udah di-acc admin:", projects.value)
+
+  } catch (error: any) { 
+    console.error("Gagal ambil data project:", error.message)
+  }
+}
+
+onMounted(() => {
+  fetchPublishedProjects()
+})
 </script>
 
 <template>
@@ -12,5 +33,6 @@ import { currentLang, translations } from '../store/langStore'
         
       </p>
     </div>
+    <!-- KODE UI CARD -->
   </div>
 </template>
