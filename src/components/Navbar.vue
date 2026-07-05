@@ -145,6 +145,12 @@ onUnmounted(() => {
             >{{ translations[currentLang].home }}</RouterLink
           >
           <RouterLink
+            to="/profile"
+            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            active-class="text-pres-blue font-semibold"
+            >Profile</RouterLink
+          >
+          <RouterLink
             to="/directory"
             class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
             active-class="text-pres-blue font-semibold"
@@ -299,6 +305,13 @@ onUnmounted(() => {
           class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
           active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
           >Home</RouterLink
+        >
+        <RouterLink
+          @click="toggleMenu"
+          to="/profile"
+          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
+          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
+          >Profile</RouterLink
         >
         <RouterLink
           @click="toggleMenu"
