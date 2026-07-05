@@ -11,6 +11,7 @@ watch(currentLang, (newLang: string) => {
 export const translations: Record<string, Record<string, string>> = {
   en: {
     home: 'Home',
+    profile: 'profile',
     directory: 'Directory',
     projects: 'Projects',
     media: 'Media',
@@ -130,6 +131,7 @@ export const translations: Record<string, Record<string, string>> = {
   },
   id: {
     home: 'Beranda',
+    profile: 'profil',
     directory: 'Direktori',
     projects: 'Proyek',
     media: 'Media',
@@ -249,6 +251,7 @@ export const translations: Record<string, Record<string, string>> = {
   },
   zh: {
     home: '首页',
+    profile: '个人资料',
     directory: '名录',
     projects: '项目',
     media: '媒体',
@@ -360,6 +363,7 @@ export const translations: Record<string, Record<string, string>> = {
   },
   ko: {
     home: '홈',
+    profile: '프로필',
     directory: '디렉토리',
     projects: '프로젝트',
     media: '미디어',
