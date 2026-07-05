@@ -97,31 +97,25 @@
     </main>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
-      <!-- 1. max-w-lg diganti jadi max-w-3xl biar lebih lebar -->
       <div class="bg-white rounded-xl shadow-xl w-full max-w-3xl overflow-hidden max-h-[90vh] flex flex-col">
         
-        <!-- HEADER MODAL -->
         <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
           <h3 class="text-lg font-bold text-gray-800">Submit New Project</h3>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
         </div>
 
-        <!-- FORM BODY (Pake Grid 2 Kolom, ditambah overflow-y-auto biar kalau layar kecil bisa discroll di dalam) -->
         <form @submit.prevent="submitProject" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5 overflow-y-auto">
-          
-          <!-- Kiri: Project Title -->
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Project Title</label>
             <input v-model="form.title" type="text" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
 
-          <!-- Kanan: Team Name -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Team Name (Creators)</label>
             <input v-model="form.team_name" type="text" required placeholder="e.g. puit26, Lily & Friends" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
 
-          <!-- Kiri: Category -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select v-model="form.category" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none bg-white">
@@ -135,37 +129,31 @@
             </select>
           </div>
 
-          <!-- Kanan: Tech Stack -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Tech Stack (Pisahkan dengan koma)</label>
             <input v-model="form.tech_stack_input" type="text" required placeholder="e.g. Vue, Tailwind, Supabase" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
 
-          <!-- Kiri: Project URL -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Project URL (Live Demo)</label>
             <input v-model="form.project_url" type="url" placeholder="https://..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
 
-          <!-- Kanan: GitHub URL -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">GitHub URL</label>
             <input v-model="form.github_url" type="url" placeholder="https://github.com/..." class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
           </div>
 
-          <!-- Bawah (Makan 2 kolom): Description -->
           <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea v-model="form.description" rows="3" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
           </div>
 
-          <!-- Bawah (Makan 2 kolom): Thumbnail -->
           <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">Thumbnail Image</label>
             <input type="file" @change="handleFileUpload" accept="image/*" required class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
           </div>
 
-          <!-- TOMBOL (Makan 2 kolom, ditaruh di kanan) -->
           <div class="md:col-span-2 pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3">
             <button type="button" @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
               Cancel

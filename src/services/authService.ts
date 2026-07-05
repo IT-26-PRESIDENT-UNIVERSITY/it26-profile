@@ -3,10 +3,8 @@ import { supabase } from "../lib/supabase";
 export async function login(emailOrUsername: string, password: string) {
   let loginEmail = emailOrUsername;
 
-  // Cek apakah input mengandung '@' (itu email)
   const isEmail = emailOrUsername.includes('@');
 
-  // Jika bukan email, panggil fungsi RPC yang tadi dibuat
   if (!isEmail) {
     const { data, error: rpcError } = await supabase
       .rpc('get_email_by_username', { input_username: emailOrUsername });
@@ -15,10 +13,9 @@ export async function login(emailOrUsername: string, password: string) {
       return { data: null, role: null, error: { message: "Username tidak ditemukan." } };
     }
 
-    loginEmail = data; // Email didapat dari hasil RPC
+    loginEmail = data; 
   }
 
-  // Lanjut login dengan email yang sudah valid
   const { data: authData, error } = await supabase.auth.signInWithPassword({
     email: loginEmail,
     password,
@@ -28,9 +25,7 @@ export async function login(emailOrUsername: string, password: string) {
 
   let userRole: string | null = null;
 
-  // Set role secara dinamis setelah login berhasil
   if (authData.user) {
-    // Memanfaatkan fungsi getUserRole yang sudah kamu buat di bawah
     userRole = await getUserRole(authData.user.id);
     
     if (userRole) {
@@ -38,7 +33,6 @@ export async function login(emailOrUsername: string, password: string) {
     }
   }
 
-  // Kembalikan juga role-nya supaya bisa dibaca di LoginView
   return { data: authData, role: userRole, error: null };
 }
 

@@ -168,7 +168,6 @@ const handleApprove = async (projectId: string | number) => {
   isProcessing.value = true
 
   try {
-    // Ganti bagian ini pakai rpc
     const { error } = await supabase.rpc('update_project_status', {
       p_project_id: projectId,
       p_new_status: 'published'
@@ -191,7 +190,6 @@ const handleRejectOrDelete = async (projectId: string | number) => {
   isProcessing.value = true
 
   try {
-    // Ganti bagian ini pakai rpc
     const { error } = await supabase.rpc('update_project_status', {
       p_project_id: projectId,
       p_new_status: 'banned'
@@ -200,7 +198,7 @@ const handleRejectOrDelete = async (projectId: string | number) => {
     if (error) throw error
 
     alert('Aksi berhasil diproses!')
-    fetchProjects() // Pastikan fetchProjects ini juga udah pakai rpc yang sebelumnya kita bahas ya!
+    fetchProjects()
   } catch (error: any) {
     console.error('Gagal memproses aksi:', error.message)
     alert('Gagal memproses aksi.')
@@ -218,17 +216,15 @@ onMounted(async () => {
     if (session) {
       user.value = session.user
 
-      // 👇 Panggil RPC yang barusan kita bikin 👇
       const { data, error } = await supabase
         .rpc('get_admin_profile', {
           p_admin_id: session.user.id
         })
-        .maybeSingle() // Pakai maybeSingle karena ekspektasinya cuma 1 baris data
+        .maybeSingle() 
 
       if (error) {
         console.error("Gagal mengambil data profil lewat RPC:", error.message)
       } else {
-        // Data berhasil diambil nembus RLS!
         profile.value = data 
       }
     }
