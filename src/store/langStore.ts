@@ -57,6 +57,15 @@ export const translations: Record<string, Record<string, string>> = {
     noPendingProjects: "No pending projects.",
     noPublishedProjects: "No published projects yet.",
 
+    // login
+    loginWelcome: "Welcome",
+    loginSubtitle: "Enter your credentials to access your account.",
+    loginUsernameLabel: "Username or Email",
+    loginUsernamePlaceholder: "name@example.com or johndoe",
+    loginPasswordLabel: "Password",
+    loginForgot: "Forgot?",
+    loginButton: "Login",
+
     // profile
     title: "Informatics Department, President University",
     subtitle: "Preparing students to become industry-ready professionals in the digital era with a comprehensive and globally competitive curriculum.",
@@ -177,6 +186,15 @@ export const translations: Record<string, Record<string, string>> = {
     noPendingProjects: "Tidak ada proyek yang menunggu.",
     noPublishedProjects: "Belum ada proyek yang diterbitkan.",
 
+    // login
+    loginWelcome: "Selamat Datang",
+    loginSubtitle: "Masukkan kredensial Anda untuk mengakses akun Anda.",
+    loginUsernameLabel: "Nama Pengguna atau Email",
+    loginUsernamePlaceholder: "nama@contoh.com atau johndoe",
+    loginPasswordLabel: "Kata Sandi",
+    loginForgot: "Lupa?",
+    loginButton: "Masuk",
+
     // profile
     title: "Departemen Informatika, President University",
     subtitle: "Mempersiapkan mahasiswa menjadi profesional siap industri di era digital dengan kurikulum yang komprehensif dan berdaya saing global.",
@@ -289,6 +307,15 @@ export const translations: Record<string, Record<string, string>> = {
     noPendingProjects: "没有待处理的项目。",
     noPublishedProjects: "暂无已发布的项目。",
 
+    // login
+    loginWelcome: "欢迎",
+    loginSubtitle: "请输入您的凭据以访问您的帐户。",
+    loginUsernameLabel: "用户名或电子邮件",
+    loginUsernamePlaceholder: "name@example.com 或 johndoe",
+    loginPasswordLabel: "密码",
+    loginForgot: "忘记密码？",
+    loginButton: "登录",
+
     // profile
     title: "信息学系, 总统大学",
     subtitle: "以全面且具有全球竞争力的课程，培养学生成为数字时代适应工业需求的专业人才。",
@@ -400,6 +427,15 @@ export const translations: Record<string, Record<string, string>> = {
     reject: "거절",
     noPendingProjects: "대기 중인 프로젝트가 없습니다.",
     noPublishedProjects: "게시된 프로젝트가 없습니다.",
+
+    // login
+    loginWelcome: "환영합니다",
+    loginSubtitle: "계정에 액세스하려면 자격 증명을 입력하십시오.",
+    loginUsernameLabel: "사용자 이름 또는 이메일",
+    loginUsernamePlaceholder: "name@example.com 또는 johndoe",
+    loginPasswordLabel: "비밀번호",
+    loginForgot: "비밀번호 찾기",
+    loginButton: "로그인",
 
     // profile
     title: "정보학과, 프레지던트 대학교",

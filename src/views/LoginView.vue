@@ -8,26 +8,26 @@
           </div>
         </div>
 
-        <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome</h1>
-        <p class="text-gray-500 mb-8">Enter your credentials to access your account.</p>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">{{ translations[currentLang].loginWelcome }}</h1>
+        <p class="text-gray-500 mb-8">{{ translations[currentLang].loginSubtitle }}</p>
         <p v-if="errorMessage" class="mb-4 text-sm text-red-500">{{ errorMessage }}</p>
 
         <form @submit.prevent="handleLogin" class="space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Username or Email</label>
+            <label class="block text-sm font-medium text-gray-700 mb-2">{{ translations[currentLang].loginUsernameLabel }}</label>
             <input
               v-model="emailOrUsername" 
               type="text" 
               required
-              placeholder="name@example.com or johndoe"
+              :placeholder=" translations[currentLang].loginUsernamePlaceholder "
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           <div>
             <div class="flex justify-between items-center mb-2">
-              <label class="text-sm font-medium text-gray-700">Password</label>
-              <a href="#" class="text-sm text-blue-600 hover:underline">Forgot?</a>
+              <label class="text-sm font-medium text-gray-700">{{ translations[currentLang].passwordLabel }}</label>
+              <a href="#" class="text-sm text-blue-600 hover:underline">{{ translations[currentLang].loginForgot }}?</a>
             </div>
             <input 
               v-model="password" 
@@ -64,6 +64,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router"; 
 import { login } from "../services/authService";
+import { currentLang, translations } from '../store/langStore';
 
 const router = useRouter(); 
 
