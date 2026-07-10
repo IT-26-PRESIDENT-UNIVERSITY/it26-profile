@@ -20,6 +20,7 @@
           <div class="text-right">
             <h3 class="text-sm font-bold text-gray-800">{{ username }}</h3>
             <p class="text-xs text-gray-400">{{ userEmail }}</p> 
+            <p v-if="lastLogin" class="text-[10px] text-gray-400 mt-1">Last login: {{ lastLogin }}</p>
           </div>
           <div class="w-11 h-11 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,6 +36,58 @@
 
       <div v-else class="space-y-8">
         
+        <!-- Edit Profile Section -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
+            <h2 class="text-lg font-bold text-gray-800">Edit Profile</h2>
+            <button 
+              @click="saveProfile" 
+              :disabled="isSavingProfile"
+              class="bg-gray-800 hover:bg-gray-900 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow-sm disabled:opacity-50"
+            >
+              {{ isSavingProfile ? 'Saving...' : 'Save Profile' }}
+            </button>
+          </div>
+          
+          <div v-if="profileMessage" :class="profileSuccess ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'" class="mb-4 px-4 py-3 rounded-lg text-sm">
+            {{ profileMessage }}
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
+              <input v-model="profileForm.name" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">NIM</label>
+              <input v-model="profileForm.nim" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Major</label>
+              <input v-model="profileForm.major" type="text" disabled class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Batch (Year)</label>
+              <input v-model="profileForm.batch" type="number" disabled class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-gray-50 text-gray-500 cursor-not-allowed outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Specialization</label>
+              <input v-model="profileForm.specialization" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-1">GitHub Username</label>
+              <input v-model="profileForm.github_username" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Skills (comma separated)</label>
+              <input v-model="profileForm.skillsInput" type="text" placeholder="e.g. React, Node.js, Python" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-semibold text-gray-700 mb-1">Bio</label>
+              <textarea v-model="profileForm.bio" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-blue-500 focus:border-blue-500 outline-none"></textarea>
+            </div>
+          </div>
+        </div>
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-800">My Projects</h2>
@@ -93,7 +146,6 @@
           </div>
         </div>
       </div>
-
     </main>
 
     <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 px-4">
@@ -183,7 +235,23 @@ const myProjects = ref([])
 const currentUser = ref(null)
 const userEmail = ref('') 
 const username = ref('Student');
+const lastLogin = ref('');
 const router = useRouter();
+
+// Profile State
+const isSavingProfile = ref(false)
+const profileMessage = ref('')
+const profileSuccess = ref(false)
+const profileForm = ref({
+  name: '',
+  nim: '',
+  major: 'Information Technology',
+  batch: 2026,
+  specialization: '',
+  github_username: '',
+  bio: '',
+  skillsInput: ''
+})
 
 // State untuk Form Input
 const form = ref({
@@ -204,16 +272,28 @@ onMounted(async () => {
   if (user) {
     currentUser.value = user
     userEmail.value = user.email
+    if (user.last_sign_in_at) {
+      lastLogin.value = new Date(user.last_sign_in_at).toLocaleString('id-ID', {
+        dateStyle: 'medium', timeStyle: 'short'
+      })
+    }
     
     const { data: profile } = await supabase
       .from('profiles_user')
-      .select('username')
+      .select('*')
       .eq('id', user.id)
       .single()
       
     if (profile) {
-           
-      username.value = profile.username 
+      username.value = profile.username || 'Student'
+      profileForm.value.name = profile.name || ''
+      profileForm.value.nim = profile.nim || ''
+      profileForm.value.major = profile.major || 'Information Technology'
+      profileForm.value.batch = profile.batch || 2026
+      profileForm.value.specialization = profile.specialization || ''
+      profileForm.value.github_username = profile.github_username || ''
+      profileForm.value.bio = profile.bio || ''
+      profileForm.value.skillsInput = (profile.skills || []).join(', ')
     }
     // ----------------------------
 
@@ -323,5 +403,43 @@ const closeModal = () => {
   tech_stack_input: '' 
 }
   selectedFile.value = null
+}
+
+const saveProfile = async () => {
+  isSavingProfile.value = true
+  profileMessage.value = ''
+  
+  try {
+    const skillsArray = profileForm.value.skillsInput
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => s !== '')
+
+    const { error } = await supabase
+      .from('profiles_user')
+      .update({
+        name: profileForm.value.name,
+        nim: profileForm.value.nim,
+        major: profileForm.value.major,
+        batch: profileForm.value.batch,
+        specialization: profileForm.value.specialization,
+        github_username: profileForm.value.github_username,
+        bio: profileForm.value.bio,
+        skills: skillsArray
+      })
+      .eq('id', currentUser.value.id)
+
+    if (error) throw error
+
+    profileSuccess.value = true
+    profileMessage.value = 'Profile updated successfully!'
+  } catch (error) {
+    console.error('Error saving profile:', error)
+    profileSuccess.value = false
+    profileMessage.value = error.message || 'Failed to update profile.'
+  } finally {
+    isSavingProfile.value = false
+    setTimeout(() => { profileMessage.value = '' }, 3000)
+  }
 }
 </script>

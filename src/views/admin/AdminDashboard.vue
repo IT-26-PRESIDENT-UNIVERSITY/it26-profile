@@ -20,6 +20,7 @@
           <div class="text-right">
             <h3 class="text-sm font-bold text-gray-800">{{ profile?.username }}</h3>
             <p class="text-xs text-gray-400">{{ user?.email }}</p>
+            <p v-if="lastLogin" class="text-[10px] text-gray-400 mt-1">Last login: {{ lastLogin }}</p>
           </div>
           <div class="w-11 h-11 rounded-full bg-gray-50 border border-gray-200 flex items-center justify-center shadow-sm">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -35,6 +36,43 @@
 
       <div v-else class="space-y-8">
         
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">Password Reset Requests</h2>
+            <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+              {{ pendingResetRequests.length }} Request(s)
+            </span>
+          </div>
+
+          <div class="overflow-x-auto border border-gray-100 rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+              <thead class="bg-gray-50 text-gray-700 font-medium">
+                <tr>
+                  <th class="px-4 py-3">{{ translations[currentLang].date }}</th>
+                  <th class="px-4 py-3">Username</th>
+                  <th class="px-4 py-3 text-right">{{ translations[currentLang].actions }}</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <tr v-for="request in pendingResetRequests" :key="request.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-gray-500">
+                    {{ new Date(request.created_at).toLocaleDateString('id-ID') }}
+                  </td>
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ request.username }}</td>
+                  <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                    <button @click="handleResetPassword(request.id)" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1.5 rounded font-medium transition-colors">
+                      Reset to Default
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="pendingResetRequests.length === 0">
+                  <td colspan="3" class="text-center py-8 text-gray-400">No pending password reset requests</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-800">{{ translations[currentLang].projectApprovalQueue }}</h2>
@@ -122,6 +160,7 @@
         </div>
 
       </div>
+
     </main>
   </div>
 </template>
@@ -133,12 +172,14 @@ import { currentLang, translations } from '../../store/langStore'
 
 const pendingProjects = ref<any[]>([])
 const publishedProjects = ref<any[]>([])
+const pendingResetRequests = ref<any[]>([])
 const isLoading = ref(true)
 const isProcessing = ref(false)
 
 const user = ref<any>(null)
 const profile = ref<any>(null)
 const loading = ref(true)
+const lastLogin = ref('')
 
 const fetchProjects = async () => {
   isLoading.value = true
@@ -160,6 +201,37 @@ const fetchProjects = async () => {
     alert('Terjadi kesalahan saat mengambil data proyek.')
   } finally {
     isLoading.value = false
+  }
+}
+
+const fetchResetRequests = async () => {
+  try {
+    const { data, error } = await supabase.rpc('get_password_reset_requests')
+    if (error) throw error
+    pendingResetRequests.value = data || []
+  } catch (error: any) {
+    console.error('Gagal mengambil data reset password:', error.message)
+  }
+}
+
+const handleResetPassword = async (requestId: string) => {
+  if (!confirm('Apakah Anda yakin ingin mereset password user ini ke default (Presuit26!)?')) return
+  isProcessing.value = true
+
+  try {
+    const { error } = await supabase.rpc('admin_reset_user_password', {
+      p_request_id: requestId
+    })
+
+    if (error) throw error
+    
+    alert('Password berhasil di-reset ke default!')
+    fetchResetRequests() 
+  } catch (error: any) {
+    console.error('Gagal mereset password:', error.message)
+    alert('Gagal mereset password.')
+  } finally {
+    isProcessing.value = false 
   }
 }
 
@@ -209,12 +281,18 @@ const handleRejectOrDelete = async (projectId: string | number) => {
 
 onMounted(async () => {
   fetchProjects()
+  fetchResetRequests()
 
   try {
     const { data: { session } } = await supabase.auth.getSession()
 
     if (session) {
       user.value = session.user
+      if (session.user.last_sign_in_at) {
+        lastLogin.value = new Date(session.user.last_sign_in_at).toLocaleString('id-ID', {
+          dateStyle: 'medium', timeStyle: 'short'
+        })
+      }
 
       const { data, error } = await supabase
         .rpc('get_admin_profile', {

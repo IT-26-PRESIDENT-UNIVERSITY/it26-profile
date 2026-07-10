@@ -27,7 +27,7 @@
           <div>
             <div class="flex justify-between items-center mb-2">
               <label class="text-sm font-medium text-gray-700">{{ translations[currentLang].passwordLabel }}</label>
-              <a href="#" class="text-sm text-blue-600 hover:underline">{{ translations[currentLang].loginForgot }}?</a>
+              <a href="#" @click.prevent="showForgotPassword = true" class="text-sm text-blue-600 hover:underline">{{ translations[currentLang].loginForgot }}?</a>
             </div>
             <input 
               v-model="password" 
@@ -57,6 +57,31 @@
         <div class="absolute inset-0 bg-black/10"></div> 
       </div>
     </div>
+
+    <!-- Forgot Password Modal -->
+    <div v-if="showForgotPassword" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6 relative">
+        <button @click="showForgotPassword = false" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        <h3 class="text-xl font-bold text-gray-900 mb-4">Lupa Password</h3>
+        <p class="text-gray-600 mb-4 text-sm">Masukkan username Anda. Permintaan reset password akan dikirim ke admin untuk disetujui.</p>
+        
+        <form @submit.prevent="handleForgotPassword" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <input v-model="forgotUsername" type="text" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Masukkan username">
+          </div>
+          <div v-if="forgotMessage" :class="forgotSuccess ? 'text-green-600' : 'text-red-600'" class="text-sm">
+            {{ forgotMessage }}
+          </div>
+          <button type="submit" :disabled="forgotLoading" class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 rounded-lg transition-colors">
+            {{ forgotLoading ? 'Mengirim...' : 'Kirim Permintaan' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -72,6 +97,13 @@ const emailOrUsername = ref("");
 const password = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
+
+// Forgot Password Modal State
+const showForgotPassword = ref(false);
+const forgotUsername = ref("");
+const forgotLoading = ref(false);
+const forgotMessage = ref("");
+const forgotSuccess = ref(false);
 
 const handleLogin = async () => {
   loading.value = true;
@@ -95,6 +127,31 @@ const handleLogin = async () => {
     router.push('/user');
   } else {
     errorMessage.value = "Akun berhasil masuk, tetapi role tidak terdaftar.";
+  }
+};
+
+const handleForgotPassword = async () => {
+  if (!forgotUsername.value.trim()) return;
+  
+  forgotLoading.value = true;
+  forgotMessage.value = "";
+  forgotSuccess.value = false;
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { error } = await supabase.rpc('request_password_reset', { p_username: forgotUsername.value });
+    
+    if (error) throw error;
+    
+    forgotSuccess.value = true;
+    forgotMessage.value = "Permintaan reset password berhasil dikirim ke Admin.";
+    forgotUsername.value = "";
+  } catch (error: any) {
+    console.error("Forgot password error:", error);
+    forgotSuccess.value = false;
+    forgotMessage.value = "Gagal mengirim permintaan. Pastikan username benar.";
+  } finally {
+    forgotLoading.value = false;
   }
 };
 </script>

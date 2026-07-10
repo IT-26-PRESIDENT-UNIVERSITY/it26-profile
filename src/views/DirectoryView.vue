@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import studentsData from '../data/dataMahasiswa.json'
+import { ref, computed, onMounted } from 'vue'
+import { supabase } from '../lib/supabase'
 import { currentLang, translations } from '../store/langStore'
 
 interface Student {
@@ -11,10 +11,33 @@ interface Student {
   specialization: string
   skills: string[]
   github_username: string
+  bio?: string
 }
 
-// Convert JSON data to ref
-const students = ref<Student[]>(studentsData as Student[])
+const students = ref<Student[]>([])
+const isLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    const { data, error } = await supabase
+      .from('profiles_user')
+      .select('*')
+      // Only fetch users who have set their name (meaning they completed their profile)
+      .not('name', 'is', null)
+      .order('name')
+
+    if (error) throw error
+    
+    if (data) {
+      students.value = data as Student[]
+    }
+  } catch (error) {
+    console.error('Error fetching directory:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 
 const searchQuery = ref('')
 
@@ -56,13 +79,17 @@ const filteredStudents = computed(() => {
           <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4">
             <div>
               <h3 class="text-lg font-bold text-gray-900 capitalize">{{ student.name }}</h3>
-              <p class="text-sm text-gray-500 font-mono">NIM: {{ student.nim }}</p>
+              <p v-if="student.nim" class="text-sm text-gray-500 font-mono">NIM: {{ student.nim }}</p>
             </div>
-            <span
+            <span v-if="student.batch"
               class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-pres-blue">
               Batch {{ student.batch }}
             </span>
           </div>
+
+          <p v-if="student.bio" class="text-sm text-gray-600 italic mb-4 line-clamp-3">
+            "{{ student.bio }}"
+          </p>
 
           <div class="space-y-2 text-sm text-gray-600 mb-4">
             <p v-if="student.specialization">
@@ -94,6 +121,11 @@ const filteredStudents = computed(() => {
           <span v-else class="text-sm text-gray-400 italic">No GitHub provided</span>
         </div>
       </div>
+    </div>
+
+    <div v-else-if="isLoading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-300 border-t-pres-blue mb-4"></div>
+      <p class="text-lg text-gray-500">Loading directory...</p>
     </div>
 
     <div v-else class="text-center py-12">
