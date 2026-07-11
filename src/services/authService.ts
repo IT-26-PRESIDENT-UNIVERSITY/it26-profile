@@ -74,3 +74,42 @@ export async function getCurrentUser() {
 export async function getSession() {
   return await supabase.auth.getSession();
 }
+
+// Fungsi buat ganti password user yang sedang login
+export async function changePassword(newPassword: string) {
+
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  return { data, error };
+}
+
+// Fungsi untuk membuat request forgot password ke Admin
+export async function requestForgotPassword(emailOrUsername: string) {
+  let userEmail = emailOrUsername;
+  const isEmail = emailOrUsername.includes('@');
+
+  // 1. Kalau inputnya username, cari dulu email-nya pakai RPC yang udah lu punya
+  if (!isEmail) {
+    const { data: resolvedEmail, error: rpcError } = await supabase
+      .rpc('get_email_by_username', { input_username: emailOrUsername });
+
+    if (rpcError || !resolvedEmail) {
+      return { error: { message: "Username tidak ditemukan." } };
+    }
+    userEmail = resolvedEmail;
+  }
+
+  // 2. Masukkan data request ke tabel antrean di Supabase
+  const { error } = await supabase
+    .from('forgot_password_requests')
+    .insert([
+      { 
+        username_or_email: emailOrUsername, 
+        email: userEmail,
+        status: 'pending' // status awal antrean
+      }
+    ]);
+
+  return { error };
+}

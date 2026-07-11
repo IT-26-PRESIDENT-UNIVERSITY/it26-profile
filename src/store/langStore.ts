@@ -11,7 +11,7 @@ watch(currentLang, (newLang: string) => {
 export const translations: Record<string, Record<string, string>> = {
   en: {
     home: 'Home',
-    profile: 'profile',
+    profile: 'Profile',
     directory: 'Directory',
     projects: 'Projects',
     media: 'Media',
@@ -140,7 +140,7 @@ export const translations: Record<string, Record<string, string>> = {
   },
   id: {
     home: 'Beranda',
-    profile: 'profil',
+    profile: 'Profil',
     directory: 'Direktori',
     projects: 'Proyek',
     media: 'Media',

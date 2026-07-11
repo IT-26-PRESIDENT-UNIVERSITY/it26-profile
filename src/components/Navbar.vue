@@ -5,7 +5,9 @@ import { supabase } from '../lib/supabase';
 import { logout } from '../services/authService'; 
 import { computed } from 'vue';
 import directoryData from '../data/dataMahasiswa.json';
-import { currentLang, translations } from '../store/langStore'
+import { currentLang, translations } from '../store/langStore';
+import { changePassword } from '../services/authService'; 
+
 // import projectsData from '../data/projects.json'; 
 // import mediaData from '../data/media.json';
 
@@ -16,7 +18,48 @@ const isDropdownOpen = ref(false);
 const dropdownRef = ref(null);
 const isSearchOpen = ref(false);
 const searchQuery = ref('');
-const isLangDropdownOpen = ref(false)
+const isLangDropdownOpen = ref(false);
+const isChangePasswordModalOpen = ref(false);
+const newPassword = ref('');
+const confirmPassword = ref('');
+const isUpdatingPassword = ref(false);
+
+// Fungsi buka modal
+const openChangePasswordModal = () => {
+  isDropdownOpen.value = false; // Menutup dropdown menu profil lu
+  isChangePasswordModalOpen.value = true; // Membuka modal ganti password
+  newPassword.value = '';
+  confirmPassword.value = '';
+};
+
+// Fungsi tutup modal
+const closeChangePasswordModal = () => {
+  isChangePasswordModalOpen.value = false;
+};
+
+// Fungsi eksekusi ganti password
+const submitChangePassword = async () => {
+  if (newPassword.value !== confirmPassword.value) {
+    alert("Password baru dan konfirmasi tidak cocok!");
+    return;
+  }
+  
+  if (newPassword.value.length < 6) {
+    alert("Password minimal 6 karakter!");
+    return;
+  }
+
+  isUpdatingPassword.value = true;
+  const { error } = await changePassword(newPassword.value);
+  isUpdatingPassword.value = false;
+
+  if (error) {
+    alert("Gagal mengganti password: " + error.message);
+  } else {
+    alert("Password berhasil diubah!");
+    closeChangePasswordModal();
+  }
+};
 
 const setLanguage = (lang: string) => {
   currentLang.value = lang
@@ -228,6 +271,12 @@ onUnmounted(() => {
               >
                 My Dashboard
               </RouterLink>
+              <button 
+                @click="openChangePasswordModal" 
+                class="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 font-medium"
+              >
+                Ganti Password
+              </button>
               <button 
                 @click="handleLogout" 
                 class="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 font-medium"
@@ -460,6 +509,60 @@ onUnmounted(() => {
         </div>
       </div>
 
+    </div>
+  </div>
+  <div 
+    v-if="isChangePasswordModalOpen" 
+    class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+  >
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6 relative mx-4 animate-in fade-in zoom-in-95 duration-200">
+      
+      <button 
+        @click="closeChangePasswordModal" 
+        type="button"
+        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+      
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-6">
+        Ganti Password
+      </h3>
+      
+      <form @submit.prevent="submitChangePassword" class="space-y-4">
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Password Baru</label>
+          <input 
+            type="password" 
+            v-model="newPassword" 
+            required 
+            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" 
+            placeholder="••••••••"
+          >
+        </div>
+        
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Konfirmasi Password Baru</label>
+          <input 
+            type="password" 
+            v-model="confirmPassword" 
+            required 
+            class="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" 
+            placeholder="••••••••"
+          >
+        </div>
+        
+        <button 
+          type="submit" 
+          :disabled="isUpdatingPassword" 
+          class="w-full mt-2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-semibold rounded-xl text-sm px-5 py-3 text-center dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ isUpdatingPassword ? 'Menyimpan...' : 'Simpan Password' }}
+        </button>
+      </form>
+      
     </div>
   </div>
 </template>

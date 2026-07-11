@@ -78,6 +78,55 @@
           </div>
         </div>
 
+        <!-- PANEL ANTREAN FORGOT PASSWORD -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-8">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-800">Antrean Reset Password</h2>
+            <span class="bg-red-100 text-red-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+              {{ resetRequests.length }} Waiting
+            </span>
+          </div>
+
+          <div class="overflow-x-auto border border-gray-100 rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200 text-sm text-left">
+              <thead class="bg-gray-50 text-gray-700 font-medium">
+                <tr>
+                  <th class="px-4 py-3">Tanggal</th>
+                  <th class="px-4 py-3">Username Request</th>
+                  <th class="px-4 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 bg-white">
+                <tr v-for="req in resetRequests" :key="req.id" class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-gray-500">
+                    {{ new Date(req.created_at).toLocaleDateString('id-ID') }}
+                  </td>
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ req.username }}</td>
+                  <td class="px-4 py-3 text-right space-x-2 whitespace-nowrap">
+                    <button 
+                      @click="handleAcceptReset(req)" 
+                      :disabled="isProcessing"
+                      class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-md font-medium transition-all disabled:bg-gray-400"
+                    >
+                      Reset ke Default
+                    </button>
+                    <button 
+                      @click="handleRejectReset(req.id)" 
+                      :disabled="isProcessing"
+                      class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md font-medium transition-all disabled:bg-gray-400"
+                    >
+                      Reject
+                    </button>
+                  </td>
+                </tr>
+                <tr v-if="resetRequests.length === 0">
+                  <td colspan="4" class="text-center py-8 text-gray-400">Tidak ada permintaan reset password.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div class="flex justify-between items-center mb-4">
             <h2 class="text-lg font-bold text-gray-800">{{ translations[currentLang].noPublishedProjects }}</h2>
@@ -136,6 +185,7 @@ const publishedProjects = ref<any[]>([])
 const isLoading = ref(true)
 const isProcessing = ref(false)
 
+const resetRequests = ref<any[]>([])
 const user = ref<any>(null)
 const profile = ref<any>(null)
 const loading = ref(true)
@@ -207,8 +257,87 @@ const handleRejectOrDelete = async (projectId: string | number) => {
   }
 }
 
+const fetchResetRequests = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('password_reset_requests') // <-- Pakai nama tabel temen lu
+      .select('*')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+    resetRequests.value = data || [];
+  } catch (error: any) {
+    console.error('Gagal mengambil data reset password:', error.message);
+  }
+};
+
+const handleAcceptReset = async (req: any) => {
+  if (!confirm(`Yakin mereset password akun ${req.username}?`)) return;
+  isProcessing.value = true;
+
+  try {
+    // 1. Eksekusi reset password via RPC
+    const { error: rpcError } = await supabase.rpc('reset_user_password_by_id', {
+      p_user_id: req.user_id
+    });
+    if (rpcError) throw rpcError;
+
+    // 2. UBAH DARI DELETE JADI UPDATE STATUS -> 'resolved'
+    const { data, error: updateError } = await supabase
+      .from('password_reset_requests')
+      .update({ status: 'resolved' }) 
+      .eq('id', req.id)
+      .select();
+
+    if (updateError) throw updateError;
+    if (!data || data.length === 0) throw new Error("Gagal update status di database.");
+
+    // 3. Hapus dari layar UI (Karena yang tampil cuma yang 'pending')
+    resetRequests.value = resetRequests.value.filter(item => item.id !== req.id);
+    
+    alert('Password berhasil direset dan status menjadi Resolved!');
+  } catch (error: any) {
+    console.error('Gagal:', error);
+    alert('Terjadi kesalahan: ' + error.message);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+const handleRejectReset = async (req: any) => {
+  // Ambil ID dengan aman (mendukung object atau string)
+  const targetId = req?.id || req;
+
+  if (!confirm('Yakin menolak request reset ini?')) return;
+  isProcessing.value = true;
+
+  try {
+    // Sekarang status 'rejected' sudah diizinkan oleh database!
+    const { data, error: updateError } = await supabase
+      .from('password_reset_requests')
+      .update({ status: 'rejected' }) 
+      .eq('id', targetId)
+      .select();
+
+    if (updateError) throw updateError;
+    if (!data || data.length === 0) throw new Error("Gagal update status di database.");
+
+    // Hapus dari tampilan UI
+    resetRequests.value = resetRequests.value.filter(item => item.id !== targetId);
+    
+    alert('Request berhasil ditolak!');
+  } catch (error: any) {
+    console.error('Gagal Reject:', error);
+    alert('Terjadi kesalahan: ' + error.message);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
 onMounted(async () => {
-  fetchProjects()
+  fetchProjects();
+  fetchResetRequests();
 
   try {
     const { data: { session } } = await supabase.auth.getSession()
