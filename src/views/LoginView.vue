@@ -193,6 +193,7 @@ const submitForgotPassword = async () => {
   }
 };
 
+// @ts-ignore
 const handleForgotPassword = async () => {
   if (!emailOrUsername.value) {
     alert("Silakan isi kolom Username atau Email terlebih dahulu!");
