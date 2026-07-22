@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabase';
 import { logout } from '../services/authService'; 
@@ -8,11 +8,8 @@ import directoryData from '../data/dataMahasiswa.json';
 import { currentLang, translations } from '../store/langStore';
 import { changePassword } from '../services/authService'; 
 
-// import projectsData from '../data/projects.json'; 
-// import mediaData from '../data/media.json';
-
 const router = useRouter();
-const isMenuOpen = ref(false); 
+const isSidebarOpen = ref(false); 
 const isLoggedIn = ref(false); 
 const isDropdownOpen = ref(false);
 const dropdownRef = ref(null);
@@ -24,20 +21,25 @@ const newPassword = ref('');
 const confirmPassword = ref('');
 const isUpdatingPassword = ref(false);
 
-// Fungsi buka modal
+watch(isSidebarOpen, (open) => {
+  if (open) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+});
+
 const openChangePasswordModal = () => {
-  isDropdownOpen.value = false; // Menutup dropdown menu profil lu
-  isChangePasswordModalOpen.value = true; // Membuka modal ganti password
+  isDropdownOpen.value = false;
+  isChangePasswordModalOpen.value = true;
   newPassword.value = '';
   confirmPassword.value = '';
 };
 
-// Fungsi tutup modal
 const closeChangePasswordModal = () => {
   isChangePasswordModalOpen.value = false;
 };
 
-// Fungsi eksekusi ganti password
 const submitChangePassword = async () => {
   if (newPassword.value !== confirmPassword.value) {
     alert("Password baru dan konfirmasi tidak cocok!");
@@ -66,7 +68,6 @@ const setLanguage = (lang: string) => {
   isLangDropdownOpen.value = false
 }
 
-// dummy sementara nunggu
 const projectsData = [
   { id: 1, title: 'Web Absensi', desc: 'Sistem absensi online' },
   { id: 2, title: 'Aplikasi Kasir', desc: 'POS system' }
@@ -108,20 +109,24 @@ const searchResults = computed(() => {
   }
 })
 
-const toggleMenu = () => {
-  isMenuOpen.value = !isMenuOpen.value;
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value;
 };
 
-// Fungsi Logout
+const closeSidebar = () => {
+  isSidebarOpen.value = false;
+};
+
+const navigateTo = (path: string) => {
+  router.push(path);
+  closeSidebar();
+};
+
 const handleLogout = async () => {
   isDropdownOpen.value = false;
-  
-  // 1. Logout dari backend
+  closeSidebar();
   await logout(); 
-  
-  // 2. Set state ke false
   isLoggedIn.value = false;
-  
   await router.push('/');
   window.location.reload(); 
 };
@@ -143,6 +148,12 @@ const handleClickOutside = (event: MouseEvent) => {
   closeDropdown();
 };
 
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    if (isSidebarOpen.value) closeSidebar();
+  }
+};
+
 onMounted(async () => {
   const { data } = await supabase.auth.getSession();
   isLoggedIn.value = !!data.session;
@@ -152,73 +163,66 @@ onMounted(async () => {
   });
 
   document.addEventListener('click', handleClickOutside);
+  document.addEventListener('keydown', handleKeydown);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('keydown', handleKeydown);
+  document.body.style.overflow = '';
 });
 </script>
 
 <template>
   <nav class="bg-white sticky top-0 z-50 border-b-8 border-pres-red">
-    <div class="max-w-full mx-auto px-4 lg:px-4">
+    <div class="max-w-full mx-auto px-4 lg:px-6">
       <div class="flex items-center justify-between w-full h-18">
-        <div class="flex flex-1 items-center">
-          <RouterLink to="/" class="shrink-0 flex items-center -mb-2">
-            <img src="/logo.png" alt="IT Logo" class="h-10 w-auto -mt-2" />
-          </RouterLink>
-
-          <button 
-            @click = 'isSearchOpen = true'
-            class="hidden sm:flex items-center text-gray-500 hover:text-pres-blue px-2 py-1.5 text-sm transition-colors font-medium mt-1 ml-4"
+        <div class="flex items-center gap-3">
+          <button
+            @click="toggleSidebar"
+            type="button"
+            class="relative w-10 h-10 flex flex-col items-center justify-center rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-pres-blue/20"
+            :aria-expanded="isSidebarOpen"
+            aria-label="Toggle navigation menu"
           >
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <div class="relative w-6 h-5 flex flex-col justify-between">
+              <span
+                class="block w-full h-[2.5px] bg-pres-dark rounded-full transition-all duration-300 origin-center"
+                :class="isSidebarOpen ? 'rotate-45 translate-y-[9px]' : ''"
+              ></span>
+              <span
+                class="block w-full h-[2.5px] bg-pres-dark rounded-full transition-all duration-300"
+                :class="isSidebarOpen ? 'opacity-0 scale-x-0' : 'opacity-100'"
+              ></span>
+              <span
+                class="block w-full h-[2.5px] bg-pres-dark rounded-full transition-all duration-300 origin-center"
+                :class="isSidebarOpen ? '-rotate-45 -translate-y-[9px]' : ''"
+              ></span>
+            </div>
+          </button>
+
+          <RouterLink to="/" class="shrink-0 flex items-center">
+            <img src="/logo.png" alt="IT Logo" class="h-10 w-auto" />
+          </RouterLink>
+        </div>
+
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button 
+            @click='isSearchOpen = true'
+            class="flex items-center text-gray-500 hover:text-pres-blue p-2 transition-colors"
+            aria-label="Open search"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
             </svg>
-            Search
+            <span class="hidden sm:inline ml-2 text-sm font-medium">Search</span>
           </button>
-        </div>
 
-        <!-- Desktop Menu -->
-        <div class="hidden sm:flex flex-1 justify-center items-center sm:space-x-8">
-          <RouterLink
-            to="/"
-            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            active-class="text-pres-blue font-semibold"
-            >{{ translations[currentLang].home }}</RouterLink
-          >
-          <RouterLink
-            to="/profile"
-            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            active-class="text-pres-blue font-semibold"
-            >{{ translations[currentLang].profile }}</RouterLink
-          >
-          <RouterLink
-            to="/directory"
-            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            active-class="text-pres-blue font-semibold"
-            >{{ translations[currentLang].directory }}</RouterLink
-          >
-          <RouterLink
-            to="/projects"
-            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            active-class="text-pres-blue font-semibold"
-            >{{ translations[currentLang].projects }}</RouterLink
-          >
-          <RouterLink
-            to="/media"
-            class="text-gray-700 hover:text-pres-blue px-3 py-2 rounded-md text-sm font-medium transition-colors"
-            active-class="text-pres-blue font-semibold"
-            >{{ translations[currentLang].media }}</RouterLink
-          >
-        </div>
-
-        <div class="flex-1 flex justify-end items-center space-x-4">
-  
           <div class="relative">
             <button
               @click="isLangDropdownOpen = !isLangDropdownOpen"
-              class="text-gray-500 hover:text-blue-600 transition block"
+              class="text-gray-500 hover:text-blue-600 transition p-2"
+              aria-label="Switch language"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
@@ -236,9 +240,9 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <div class="h-6 w-px bg-gray-300"></div>
+          <div class="h-6 w-px bg-gray-300 hidden sm:block"></div>
 
-          <div v-if="!isLoggedIn" class="hidden sm:flex items-center gap-3">
+          <div v-if="!isLoggedIn" class="hidden sm:flex items-center">
             <button 
               @click="router.push('/login')"
               class="text-sm font-semibold text-gray-600 hover:text-blue-600 transition px-3"
@@ -261,7 +265,6 @@ onUnmounted(() => {
 
             <div 
               v-if="isDropdownOpen" 
-
               class="absolute right-0 mt-2 w-48 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in zoom-in duration-200"
             >
               <RouterLink 
@@ -286,125 +289,116 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
-
-
-        <!-- Mobile menu button -->
-        <div class="flex items-center sm:hidden space-x-2">
-          <button @click="isSearchOpen = true" class="text-gray-500 hover:text-pres-blue p-2 transition-colors">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
-
-          <button
-            @click="toggleMenu"
-            type="button"
-            class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-pres-blue"
-            aria-controls="mobile-menu"
-            aria-expanded="false"
-          >
-            <span class="sr-only">Open main menu</span>
-            <svg
-              v-if="!isMenuOpen"
-              class="block h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-            <svg
-              v-else
-              class="block h-6 w-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
       </div>
     </div>
+  </nav>
 
-    <!-- Mobile Menu -->
+  <Transition name="backdrop">
     <div
-      v-show="isMenuOpen"
-      class="sm:hidden border-t border-gray-200"
-      id="mobile-menu"
-    >
-      <div class="pt-2 pb-3 space-y-1">
-        <RouterLink
-          @click="toggleMenu"
-          to="/"
-          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
-          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
-          >Home</RouterLink
-        >
-        <RouterLink
-          @click="toggleMenu"
-          to="/profile"
-          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
-          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
-          >Profile</RouterLink
-        >
-        <RouterLink
-          @click="toggleMenu"
-          to="/directory"
-          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
-          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
-          >Directory</RouterLink
-        >
-        <RouterLink
-          @click="toggleMenu"
-          to="/projects"
-          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
-          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
-          >Projects</RouterLink
-        >
-        <RouterLink
-          @click="toggleMenu"
-          to="/media"
-          class="block px-4 py-2 text-base font-medium text-gray-700 hover:text-pres-blue hover:bg-gray-50"
-          active-class="text-pres-blue bg-blue-50 border-l-4 border-pres-blue"
-          >Media</RouterLink
-        >
-        <div v-if="!isLoggedIn" class="flex flex-col gap-3 w-full mt-2">
-          <button 
-            @click="() => {
-              router.push('/login');
-              isMenuOpen = false;
-            }"
-            class="w-full text-center text-gray-600 font-medium border border-gray-300 px-5 py-2 rounded-lg hover:text-blue-600 transition-colors"
-          >
-            Log in
-          </button>
-        </div>
+      v-if="isSidebarOpen"
+      class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"
+      @click="closeSidebar"
+    ></div>
+  </Transition>
 
-        <button 
-          v-else
-          @click="handleLogout()"
-          class="w-full mt-2 text-gray-500 hover:text-red-600 font-medium transition-colors border border-gray-300 px-5 py-2 rounded-lg"
+  <Transition name="sidebar">
+    <div
+      v-if="isSidebarOpen"
+      class="fixed top-0 left-0 z-[70] h-full w-72 sm:w-80 bg-pres-dark text-white shadow-2xl flex flex-col"
+    >
+      <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
+        <RouterLink to="/" @click="closeSidebar" class="flex items-center gap-3">
+          <img src="/logo.png" alt="IT Logo" class="h-9 w-auto brightness-0 invert" />
+          <span class="text-lg font-bold tracking-wide">IT-26</span>
+        </RouterLink>
+        <button
+          @click="closeSidebar"
+          class="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+          aria-label="Close menu"
         >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <button
+          @click="navigateTo('/')"
+          class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 group"
+        >
+          <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          {{ translations[currentLang].home }}
+        </button>
+
+        <button
+          @click="navigateTo('/profile')"
+          class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 group"
+        >
+          <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          {{ translations[currentLang].profile }}
+        </button>
+
+        <button
+          @click="navigateTo('/directory')"
+          class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 group"
+        >
+          <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          {{ translations[currentLang].directory }}
+        </button>
+
+        <button
+          @click="navigateTo('/projects')"
+          class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 group"
+        >
+          <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          {{ translations[currentLang].projects }}
+        </button>
+
+        <button
+          @click="navigateTo('/media')"
+          class="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all duration-200 group"
+        >
+          <svg class="w-5 h-5 text-white/50 group-hover:text-white transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          {{ translations[currentLang].media }}
+        </button>
+      </nav>
+
+      <div class="px-4 py-5 border-t border-white/10">
+        <button
+          v-if="!isLoggedIn"
+          @click="navigateTo('/login')"
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-white/10 text-white font-medium hover:bg-white/20 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+          </svg>
+          {{ translations[currentLang].login }}
+        </button>
+
+        <button
+          v-else
+          @click="handleLogout"
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/20 text-red-300 font-medium hover:bg-red-500/30 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
           Logout
         </button>
       </div>
     </div>
-  </nav>
+  </Transition>
 
   <div 
     v-if="isSearchOpen" 
@@ -429,81 +423,55 @@ onUnmounted(() => {
         </button>
       </div>
 
-      <div 
-        v-if="isSearchOpen" 
-        class="fixed inset-0 z-[100] flex items-start justify-center pt-24 bg-gray-900/50 backdrop-blur-sm"
-        @click.self="isSearchOpen = false"
-      >
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col mx-4">
+      <div class="p-4 max-h-[60vh] overflow-y-auto">
+        
+        <div v-if="!searchQuery" class="text-sm text-gray-400 text-center py-8">
+          Ketik sesuatu untuk mulai mencari di Directory, Projects, atau Media.
+        </div>
+
+        <div v-else-if="searchResults.directory.length === 0 && searchResults.projects.length === 0 && searchResults.media.length === 0" class="text-sm text-gray-500 text-center py-8">
+          Tidak menemukan apapun untuk "<span class="font-semibold text-gray-800">{{ searchQuery }}</span>"
+        </div>
+
+        <div v-else class="space-y-6">
           
-          <div class="flex items-center px-4 py-4 border-b border-gray-100">
-            <svg class="w-6 h-6 text-gray-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input 
-              v-model="searchQuery"
-              type="text" 
-              placeholder="Search directory, projects, media..." 
-              class="flex-1 bg-transparent text-gray-800 text-lg focus:outline-none placeholder-gray-400"
-              autofocus
-            />
-            <button @click="isSearchOpen = false" class="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded hover:bg-gray-200 transition">
-              ESC
-            </button>
+          <div v-if="searchResults.directory.length > 0">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Directory</h3>
+            <ul class="space-y-1">
+              <li v-for="student in searchResults.directory" :key="student.nim">
+                <a href="#" class=" px-3 py-2 rounded-lg hover:bg-blue-50 transition flex justify-between items-center group">
+                  <div>
+                    <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ student.name }}</div>
+                    <div class="text-xs text-gray-500">{{ student.nim }}</div>
+                  </div>
+                  <span class="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition">Lihat &rarr;</span>
+                </a>
+              </li>
+            </ul>
           </div>
 
-          <div class="p-4 max-h-[60vh] overflow-y-auto">
-            
-            <div v-if="!searchQuery" class="text-sm text-gray-400 text-center py-8">
-              Ketik sesuatu untuk mulai mencari di Directory, Projects, atau Media.
-            </div>
+          <div v-if="searchResults.projects.length > 0">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Projects</h3>
+            <ul class="space-y-1">
+              <li v-for="project in searchResults.projects" :key="project.id">
+                <a href="#" class="block px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
+                  <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ project.title }}</div>
+                  <div class="text-xs text-gray-500">{{ project.desc }}</div>
+                </a>
+              </li>
+            </ul>
+          </div>
 
-            <div v-else-if="searchResults.directory.length === 0 && searchResults.projects.length === 0 && searchResults.media.length === 0" class="text-sm text-gray-500 text-center py-8">
-              Tidak menemukan apapun untuk "<span class="font-semibold text-gray-800">{{ searchQuery }}</span>"
-            </div>
-
-            <div v-else class="space-y-6">
-              
-              <div v-if="searchResults.directory.length > 0">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Directory</h3>
-                <ul class="space-y-1">
-                  <li v-for="student in searchResults.directory" :key="student.nim">
-                    <a href="#" class=" px-3 py-2 rounded-lg hover:bg-blue-50 transition flex justify-between items-center group">
-                      <div>
-                        <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ student.name }}</div>
-                        <div class="text-xs text-gray-500">{{ student.nim }}</div>
-                      </div>
-                      <span class="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition">Lihat &rarr;</span>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div v-if="searchResults.projects.length > 0">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Projects</h3>
-                <ul class="space-y-1">
-                  <li v-for="project in searchResults.projects" :key="project.id">
-                    <a href="#" class="block px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
-                      <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ project.title }}</div>
-                      <div class="text-xs text-gray-500">{{ project.desc }}</div>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-              <div v-if="searchResults.media.length > 0">
-                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Media</h3>
-                <ul class="space-y-1">
-                  <li v-for="media in searchResults.media" :key="media.id">
-                    <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
-                      <svg class="w-4 h-4 text-gray-400 mr-2 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                      <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ media.title }}</div>
-                    </a>
-                  </li>
-                </ul>
-              </div>
-
-            </div>
+          <div v-if="searchResults.media.length > 0">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 px-3">Media</h3>
+            <ul class="space-y-1">
+              <li v-for="media in searchResults.media" :key="media.id">
+                <a href="#" class="flex items-center px-3 py-2 rounded-lg hover:bg-blue-50 transition group">
+                  <svg class="w-4 h-4 text-gray-400 mr-2 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  <div class="text-sm font-medium text-gray-800 group-hover:text-blue-700">{{ media.title }}</div>
+                </a>
+              </li>
+            </ul>
           </div>
 
         </div>
@@ -511,6 +479,7 @@ onUnmounted(() => {
 
     </div>
   </div>
+
   <div 
     v-if="isChangePasswordModalOpen" 
     class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
