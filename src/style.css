@@ -3,6 +3,7 @@
 @theme {
   --color-pres-blue: #080b4d;
   --color-pres-dark: #1a1a1a;
+  --color-pres-red: #c8102e;
 }
 
 body {
@@ -20,4 +21,53 @@ body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+
+.sidebar-enter-active {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sidebar-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-enter-from,
+.sidebar-leave-to {
+  transform: translateX(-100%);
+}
+.sidebar-enter-to,
+.sidebar-leave-from {
+  transform: translateX(0);
+}
+
+
+.backdrop-enter-active {
+  transition: opacity 0.3s ease;
+}
+.backdrop-leave-active {
+  transition: opacity 0.25s ease;
+}
+.backdrop-enter-from,
+.backdrop-leave-to {
+  opacity: 0;
+}
+
+
+.modal-enter-active {
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.modal-leave-active {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.modal-enter-from {
+  opacity: 0;
+  transform: scale(0.92);
+}
+.modal-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.modal-enter-to,
+.modal-leave-from {
+  opacity: 1;
+  transform: scale(1);
 }
