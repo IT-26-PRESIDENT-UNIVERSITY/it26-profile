@@ -134,8 +134,8 @@ BEGIN
 
   new_uid := gen_random_uuid();
   INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin, is_sso_user) 
-  VALUES (new_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'azzahranabila@presuit26.com', crypt('Presuit26!', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', false, false);
-  INSERT INTO public.profiles_user (id, email, username) VALUES (new_uid, 'azzahranabila@presuit26.com', 'azzahranabila');
+  VALUES (new_uid, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'azzahranabila2@presuit26.com', crypt('Presuit26!', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}', '{}', false, false);
+  INSERT INTO public.profiles_user (id, email, username) VALUES (new_uid, 'azzahranabila2@presuit26.com', 'azzahranabila2');
 
   new_uid := gen_random_uuid();
   INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data, is_super_admin, is_sso_user) 
