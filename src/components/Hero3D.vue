@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import * as THREE from 'three'
+import gsap from 'gsap'
 
 const canvasContainer = ref<HTMLDivElement | null>(null)
 
@@ -10,23 +11,24 @@ let renderer: THREE.WebGLRenderer
 let animationFrameId: number
 
 // 3D Objects
-let coreGroup: THREE.Group
-let innerMesh: THREE.Mesh
-let outerWireframe: THREE.LineSegments
-let particlePoints: THREE.Points
-let particleLineSegments: THREE.LineSegments
+let mainGroup: THREE.Group
+let crystalCore: THREE.Mesh
+let crystalWireframe: THREE.LineSegments
+let floatingShards: THREE.Mesh[] = []
+let dustParticles: THREE.Points
 
-// Mouse interaction
+// Interactive values
 let mouseX = 0
 let mouseY = 0
-let targetRotationX = 0
-let targetRotationY = 0
+let targetMouseX = 0
+let targetMouseY = 0
+let scrollProgress = 0
 
 const onMouseMove = (event: MouseEvent) => {
   const halfX = window.innerWidth / 2
   const halfY = window.innerHeight / 2
-  mouseX = (event.clientX - halfX) / halfX
-  mouseY = (event.clientY - halfY) / halfY
+  targetMouseX = (event.clientX - halfX) / halfX
+  targetMouseY = (event.clientY - halfY) / halfY
 }
 
 const onTouchMove = (event: TouchEvent) => {
@@ -34,15 +36,22 @@ const onTouchMove = (event: TouchEvent) => {
     const touch = event.touches[0]
     const halfX = window.innerWidth / 2
     const halfY = window.innerHeight / 2
-    mouseX = (touch.clientX - halfX) / halfX
-    mouseY = (touch.clientY - halfY) / halfY
+    targetMouseX = (touch.clientX - halfX) / halfX
+    targetMouseY = (touch.clientY - halfY) / halfY
+  }
+}
+
+const onScroll = () => {
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight
+  if (maxScroll > 0) {
+    scrollProgress = window.scrollY / maxScroll
   }
 }
 
 const onWindowResize = () => {
   if (!canvasContainer.value || !renderer || !camera) return
-  const width = canvasContainer.value.clientWidth
-  const height = canvasContainer.value.clientHeight
+  const width = window.innerWidth
+  const height = window.innerHeight
   camera.aspect = width / height
   camera.updateProjectionMatrix()
   renderer.setSize(width, height)
@@ -52,157 +61,209 @@ const onWindowResize = () => {
 const initThree = () => {
   if (!canvasContainer.value) return
 
-  const width = canvasContainer.value.clientWidth
-  const height = canvasContainer.value.clientHeight
+  const width = window.innerWidth
+  const height = window.innerHeight
 
   // 1. Scene
   scene = new THREE.Scene()
+  scene.fog = new THREE.FogExp2(0x030712, 0.025)
 
   // 2. Camera
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000)
-  camera.position.z = 24
+  camera.position.set(0, 0, 22)
 
-  // 3. Renderer with alpha (transparent background)
+  // 3. Renderer with transparent alpha for igloo.inc matte void
   renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true })
   renderer.setSize(width, height)
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   renderer.toneMapping = THREE.ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.2
   canvasContainer.value.appendChild(renderer.domElement)
 
-  // 4. Lights
-  const ambientLight = new THREE.AmbientLight(0x0a192f, 2)
+  // 4. Studio Lighting (Atmospheric Ice Void)
+  const ambientLight = new THREE.AmbientLight(0x051329, 3)
   scene.add(ambientLight)
 
-  const pointLightBlue = new THREE.PointLight(0x38bdf8, 50, 100)
-  pointLightBlue.position.set(10, 12, 15)
-  scene.add(pointLightBlue)
+  const cyanKeyLight = new THREE.PointLight(0x38bdf8, 80, 100)
+  cyanKeyLight.position.set(12, 14, 18)
+  scene.add(cyanKeyLight)
 
-  const pointLightPurple = new THREE.PointLight(0x6366f1, 40, 100)
-  pointLightPurple.position.set(-12, -10, 10)
-  scene.add(pointLightPurple)
+  const violetRimLight = new THREE.PointLight(0x818cf8, 60, 100)
+  violetRimLight.position.set(-14, -12, -8)
+  scene.add(violetRimLight)
 
-  // 5. Core 3D Cybernetic Globe Group
-  coreGroup = new THREE.Group()
-  scene.add(coreGroup)
+  const blueFillLight = new THREE.DirectionalLight(0x1d4ed8, 2.5)
+  blueFillLight.position.set(0, -10, 15)
+  scene.add(blueFillLight)
 
-  // 5a. Inner Glowing Polyhedron (Dodecahedron)
-  const innerGeo = new THREE.DodecahedronGeometry(5.2, 1)
-  const innerMat = new THREE.MeshStandardMaterial({
-    color: 0x080b4d,
-    roughness: 0.3,
-    metalness: 0.8,
-    wireframe: false,
+  // 5. Main 3D Crystal Cluster (igloo.inc style)
+  mainGroup = new THREE.Group()
+  scene.add(mainGroup)
+
+  // 5a. Central Translucent Crystal Polyhedron
+  const crystalGeo = new THREE.IcosahedronGeometry(5.2, 0)
+  const crystalMat = new THREE.MeshPhysicalMaterial({
+    color: 0x0c214d,
+    emissive: 0x05112e,
+    roughness: 0.15,
+    metalness: 0.2,
+    transmission: 0.6,
+    ior: 1.45,
     flatShading: true,
     transparent: true,
-    opacity: 0.85
+    opacity: 0.88,
+    reflectivity: 0.9
   })
-  innerMesh = new THREE.Mesh(innerGeo, innerMat)
-  coreGroup.add(innerMesh)
+  crystalCore = new THREE.Mesh(crystalGeo, crystalMat)
+  mainGroup.add(crystalCore)
 
-  // 5b. Outer Cyber Wireframe (Icosahedron)
-  const wireGeo = new THREE.IcosahedronGeometry(7.2, 2)
+  // 5b. Glowing Crystalline Wireframe Structure
+  const wireGeo = new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(5.35, 0))
   const wireMat = new THREE.LineBasicMaterial({
     color: 0x38bdf8,
     transparent: true,
-    opacity: 0.45,
-    linewidth: 1
+    opacity: 0.65,
+    blending: THREE.AdditiveBlending
   })
-  const wireEdges = new THREE.WireframeGeometry(wireGeo)
-  outerWireframe = new THREE.LineSegments(wireEdges, wireMat)
-  coreGroup.add(outerWireframe)
+  crystalWireframe = new THREE.LineSegments(wireGeo, wireMat)
+  mainGroup.add(crystalWireframe)
 
-  // 6. Floating Particle Plexus Constellation
-  const particleCount = 140
-  const maxDistance = 4.2
-  const coords: number[] = []
-
-  for (let i = 0; i < particleCount; i++) {
-    // Distribute particles in a spherical shell around the center
-    const u = Math.random()
-    const v = Math.random()
-    const theta = u * 2.0 * Math.PI
-    const phi = Math.acos(2.0 * v - 1.0)
-    const r = 7.5 + Math.random() * 4.5
-    const sinPhi = Math.sin(phi)
-    const x = r * sinPhi * Math.cos(theta)
-    const y = r * sinPhi * Math.sin(theta)
-    const z = r * Math.cos(phi)
-    coords.push(x, y, z)
-  }
-
-  const pGeo = new THREE.BufferGeometry()
-  pGeo.setAttribute('position', new THREE.Float32BufferAttribute(coords, 3))
-
-  const pMat = new THREE.PointsMaterial({
-    color: 0x60a5fa,
-    size: 0.16,
+  // 5c. Secondary Orbiting Ice Shards
+  const shardCount = 18
+  const shardMat = new THREE.MeshStandardMaterial({
+    color: 0x1e3a8a,
+    emissive: 0x0ea5e9,
+    emissiveIntensity: 0.2,
+    roughness: 0.2,
+    metalness: 0.7,
+    flatShading: true,
     transparent: true,
-    opacity: 0.9
+    opacity: 0.75
   })
-  particlePoints = new THREE.Points(pGeo, pMat)
-  coreGroup.add(particlePoints)
 
-  // Dynamic connecting lines between nearby points
-  const linePositions: number[] = []
-  for (let i = 0; i < particleCount; i++) {
-    const x1 = coords[i * 3]
-    const y1 = coords[i * 3 + 1]
-    const z1 = coords[i * 3 + 2]
-    for (let j = i + 1; j < particleCount; j++) {
-      const x2 = coords[j * 3]
-      const y2 = coords[j * 3 + 1]
-      const z2 = coords[j * 3 + 2]
-      const dx = x1 - x2
-      const dy = y1 - y2
-      const dz = z1 - z2
-      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
-      if (dist < maxDistance) {
-        linePositions.push(x1, y1, z1, x2, y2, z2)
-      }
+  for (let i = 0; i < shardCount; i++) {
+    const isOcta = i % 2 === 0
+    const shardGeo = isOcta ? new THREE.OctahedronGeometry(0.8 + Math.random() * 0.9) : new THREE.TetrahedronGeometry(0.9 + Math.random() * 0.8)
+    const shard = new THREE.Mesh(shardGeo, shardMat)
+
+    const angle = (i / shardCount) * Math.PI * 2
+    const radius = 7.5 + Math.random() * 4.5
+    const heightSpread = (Math.random() - 0.5) * 8
+
+    shard.position.set(
+      Math.cos(angle) * radius,
+      heightSpread,
+      Math.sin(angle) * radius
+    )
+
+    shard.rotation.set(
+      Math.random() * Math.PI,
+      Math.random() * Math.PI,
+      Math.random() * Math.PI
+    )
+
+    // Store custom orbital parameters
+    shard.userData = {
+      baseAngle: angle,
+      radius: radius,
+      speed: (0.15 + Math.random() * 0.2) * (i % 2 === 0 ? 1 : -1),
+      rotSpeedX: 0.01 + Math.random() * 0.02,
+      rotSpeedY: 0.015 + Math.random() * 0.02,
+      yOffset: heightSpread
     }
+
+    floatingShards.push(shard)
+    mainGroup.add(shard)
   }
 
-  const lineGeo = new THREE.BufferGeometry()
-  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
-  const lineMat = new THREE.LineBasicMaterial({
-    color: 0x2563eb,
+  // 5d. Ambient Starlight Dust Particles
+  const dustCount = 200
+  const dustCoords: number[] = []
+  for (let i = 0; i < dustCount; i++) {
+    dustCoords.push(
+      (Math.random() - 0.5) * 45,
+      (Math.random() - 0.5) * 40,
+      (Math.random() - 0.5) * 40
+    )
+  }
+  const dustGeo = new THREE.BufferGeometry()
+  dustGeo.setAttribute('position', new THREE.Float32BufferAttribute(dustCoords, 3))
+  const dustMat = new THREE.PointsMaterial({
+    color: 0x93c5fd,
+    size: 0.12,
     transparent: true,
-    opacity: 0.22
+    opacity: 0.6,
+    blending: THREE.AdditiveBlending
   })
-  particleLineSegments = new THREE.LineSegments(lineGeo, lineMat)
-  coreGroup.add(particleLineSegments)
+  dustParticles = new THREE.Points(dustGeo, dustMat)
+  scene.add(dustParticles)
 
-  // 7. Event listeners
+  // 6. Listeners
   window.addEventListener('resize', onWindowResize)
   window.addEventListener('mousemove', onMouseMove)
   window.addEventListener('touchmove', onTouchMove, { passive: true })
+  window.addEventListener('scroll', onScroll, { passive: true })
+  onScroll()
 
-  // 8. Animation Loop
+  // 7. Cinematic Intro Animation with GSAP (igloo.inc style)
+  gsap.from(mainGroup.scale, {
+    x: 0.01,
+    y: 0.01,
+    z: 0.01,
+    duration: 2.2,
+    ease: 'elastic.out(1, 0.75)'
+  })
+
+  gsap.from(camera.position, {
+    z: 36,
+    duration: 2.4,
+    ease: 'power3.out'
+  })
+
+  // 8. Animation Loop with Kinetic Scroll Physics
   let clock = new THREE.Clock()
 
   const animate = () => {
     animationFrameId = requestAnimationFrame(animate)
     const elapsedTime = clock.getElapsedTime()
 
-    // Autonomous subtle rotations
-    coreGroup.rotation.y = elapsedTime * 0.12
-    coreGroup.rotation.x = Math.sin(elapsedTime * 0.15) * 0.2
+    // Smooth mouse damping
+    mouseX += (targetMouseX - mouseX) * 0.05
+    mouseY += (targetMouseY - mouseY) * 0.05
 
-    innerMesh.rotation.y = -elapsedTime * 0.2
-    innerMesh.rotation.z = elapsedTime * 0.15
+    // Base autonomous rotations
+    crystalCore.rotation.y = elapsedTime * 0.15
+    crystalCore.rotation.x = Math.sin(elapsedTime * 0.2) * 0.15
+    crystalWireframe.rotation.copy(crystalCore.rotation)
 
-    outerWireframe.rotation.x = -elapsedTime * 0.08
-    outerWireframe.rotation.y = elapsedTime * 0.18
+    // Orbiting floating shards
+    floatingShards.forEach((shard) => {
+      const u = shard.userData
+      const curAngle = u.baseAngle + elapsedTime * u.speed
+      shard.position.x = Math.cos(curAngle) * u.radius
+      shard.position.z = Math.sin(curAngle) * u.radius
+      shard.position.y = u.yOffset + Math.sin(elapsedTime * 1.2 + u.baseAngle) * 0.8
+      shard.rotation.x += u.rotSpeedX
+      shard.rotation.y += u.rotSpeedY
+    })
 
-    // Interactive mouse damping
-    targetRotationX = mouseY * 0.4
-    targetRotationY = mouseX * 0.6
-    coreGroup.rotation.x += (targetRotationX - coreGroup.rotation.x) * 0.05
-    coreGroup.rotation.y += (targetRotationY - coreGroup.rotation.y) * 0.05
+    // Dust gentle floating
+    dustParticles.rotation.y = elapsedTime * 0.02
 
-    // Subtle breathing scale
-    const breath = 1 + Math.sin(elapsedTime * 1.5) * 0.02
-    coreGroup.scale.set(breath, breath, breath)
+    // Cinematic Scroll Transitions (igloo.inc style)
+    // As user scrolls, main crystal orbits, repositions, and camera dynamically tracks
+    const targetGroupX = mouseX * 2 + (scrollProgress > 0.1 ? 3.5 : 0)
+    const targetGroupY = -mouseY * 1.5 - scrollProgress * 5
+    const targetGroupZ = -scrollProgress * 6
+    const targetRotY = elapsedTime * 0.1 + mouseX * 0.8 + scrollProgress * Math.PI * 1.2
+    const targetRotX = mouseY * 0.5 + scrollProgress * 0.6
+
+    mainGroup.position.x += (targetGroupX - mainGroup.position.x) * 0.06
+    mainGroup.position.y += (targetGroupY - mainGroup.position.y) * 0.06
+    mainGroup.position.z += (targetGroupZ - mainGroup.position.z) * 0.06
+
+    mainGroup.rotation.x += (targetRotX - mainGroup.rotation.x) * 0.05
+    mainGroup.rotation.y += (targetRotY - mainGroup.rotation.y) * 0.05
 
     renderer.render(scene, camera)
   }
@@ -221,18 +282,17 @@ onUnmounted(() => {
   window.removeEventListener('resize', onWindowResize)
   window.removeEventListener('mousemove', onMouseMove)
   window.removeEventListener('touchmove', onTouchMove)
+  window.removeEventListener('scroll', onScroll)
 
   if (scene) {
     scene.traverse((object) => {
-      if ((object as THREE.Mesh).isMesh || (object as THREE.LineSegments).isLineSegments || (object as THREE.Points).isPoints) {
-        const item = object as any
-        if (item.geometry) item.geometry.dispose()
-        if (item.material) {
-          if (Array.isArray(item.material)) {
-            item.material.forEach((m: any) => m.dispose())
-          } else {
-            item.material.dispose()
-          }
+      const item = object as any
+      if (item.geometry) item.geometry.dispose()
+      if (item.material) {
+        if (Array.isArray(item.material)) {
+          item.material.forEach((m: any) => m.dispose())
+        } else {
+          item.material.dispose()
         }
       }
     })
@@ -248,5 +308,6 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="canvasContainer" class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none"></div>
+  <!-- Fixed viewport background canvas for continuous cinematic 3D journey -->
+  <div ref="canvasContainer" class="fixed inset-0 w-full h-full overflow-hidden pointer-events-none z-0"></div>
 </template>
